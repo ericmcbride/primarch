@@ -1,0 +1,6 @@
+[package]
+name = "primarch"
+version = "0.1.0"
+authors = ["Eric McBride <eric.mcbride@toyotaconnected.com>"]
+
+[dependencies]
