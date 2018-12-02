@@ -37,22 +37,38 @@ fn run() -> Result<(), Box<::std::error::Error>> {
                  .takes_value(true)
                  .index(1)
                  .help("url to load-test"))
+        .arg(Arg::with_name("RPS")
+                  .required(true)
+                  .takes_value(true)
+                  .index(2)
+                  .help("requests per second"))
         .get_matches();
 
     // Check url for base http and strip any white space
     let url = parse_url(matches.value_of("URL").unwrap())?;
-
+    let rps = parse_rps(matches.value_of("RPS").unwrap())?;
+    
     match url.scheme() {
-        "http" | "https" => load_driver(url),
+        "http" | "https" => load_driver(url, rps),
         _ => generate_err(format!("Unsupported HTTP Protocol {}", url.scheme())),
     }
 }
 
-fn load_driver(url: Url) -> Result<(), Box<::std::error::Error>> {
+// Convert rps from string to i32. Return result enum
+fn parse_rps(rps: &str) -> Result<i32, Box<::std::error::Error>> {
+    let rps: i32 = rps.parse().unwrap();
+    Ok(rps)
+}
+
+
+// Load to be driven to given url. Spins up threads, and hits the url.  Returns a result enum.  
+fn load_driver(url: Url, rps: i32) -> Result<(), Box<::std::error::Error>> {
     let client = reqwest::Client::new();
     let (tx, rx) = mpsc::channel();
     
-    for _ in 0..10 {
+    // #TODO Add a timer to spin up REQUESTS PER SECOND.  Something like a token bucket implemented
+    // right here
+    for _ in 0..rps {
         let tx = tx.clone();
         let client = client.clone();
         let url = url.clone();
@@ -63,10 +79,12 @@ fn load_driver(url: Url) -> Result<(), Box<::std::error::Error>> {
     } 
     
     let mut response_vector = Vec::new();
-    for _ in 0..10 {
+    for _ in 0..rps {
         let r = rx.recv().unwrap();
         response_vector.push(r);
     }
+
+    println!("Response vector is {:?}", response_vector);
     Ok(()) 
 }
 
