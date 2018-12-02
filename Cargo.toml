@@ -1,6 +1,9 @@
 [package]
 name = "primarch"
 version = "0.1.0"
-authors = ["Eric McBride <eric.mcbride@toyotaconnected.com>"]
+authors = ["Eric McBride <ericmcbridedeveloper@gmail.com>"]
 
 [dependencies]
+clap = "2.26.0"
+indicatif = "0.10.1"
+reqwest = "*"
