@@ -3,11 +3,9 @@ extern crate indicatif;
 extern crate reqwest;
 
 use clap::{App, Arg};
-use indicatif::{ProgressBar, ProgressStyle};
 
 use reqwest::{Url, UrlError};
-use std::io::{Error, ErrorKind, Write};
-use std::process;
+use std::io::{Error, ErrorKind};
 use std::sync::mpsc;
 use std::thread;
 
@@ -17,7 +15,6 @@ fn main() {
         Ok(_) => println!("Report coming soon...."),
         Err(e) => {
             panic!("Error {}", e);
-            process::exit(1)
         }
     }
 }
@@ -53,14 +50,14 @@ fn run() -> Result<(), Box<::std::error::Error>> {
     }
 }
 
-// Convert rps from string to i32. Return result enum
-fn parse_rps(rps: &str) -> Result<i32, Box<::std::error::Error>> {
-    let rps: i32 = rps.parse().unwrap();
+// Convert rps from string to u64. Return result enum
+fn parse_rps(rps: &str) -> Result<u64, Box<::std::error::Error>> {
+    let rps: u64 = rps.parse().unwrap();
     Ok(rps)
 }
 
 // Load to be driven to given url. Spins up threads, and hits the url.  Returns a result enum.
-fn load_driver(url: Url, rps: i32) -> Result<(), Box<::std::error::Error>> {
+fn load_driver(url: Url, rps: u64) -> Result<(), Box<::std::error::Error>> {
     let client = reqwest::Client::new();
     let (tx, rx) = mpsc::channel();
 
@@ -84,23 +81,6 @@ fn load_driver(url: Url, rps: i32) -> Result<(), Box<::std::error::Error>> {
 
     println!("Response vector is {:?}", response_vector);
     Ok(())
-}
-
-// #TODO: Move to other file
-// This will be the progress bar for the Load Driver
-fn create_gui_progress_bar(quiet_mode: bool, msg: &str, length: Option<u64>) -> ProgressBar {
-    let bar = match quiet_mode {
-        true => ProgressBar::hidden(),
-        false => match length {
-            Some(len) => ProgressBar::new(len),
-            None => ProgressBar::new_spinner(),
-        },
-    };
-
-    bar.set_message(msg);
-
-    //#TODO MAtch statement with what we want to show during load tests to the cli
-    bar
 }
 
 // Helper function to generate the Result enum
