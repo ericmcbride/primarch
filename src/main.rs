@@ -9,7 +9,7 @@ use std::io::{Error, ErrorKind};
 use std::sync::mpsc;
 use std::thread;
 
-struct LoadOptions {
+struct HttpOptions {
     url: Url,
     rps: u64,
 }
@@ -18,7 +18,7 @@ trait LoadDriver {
     fn load_drive(&self) -> Result<(), Box<::std::error::Error>>;
 }
 
-impl LoadDriver for LoadOptions {
+impl LoadDriver for HttpOptions {
     fn load_drive(&self) -> Result<(), Box<::std::error::Error>> {
         let client = reqwest::Client::new();
         let (tx, rx) = mpsc::channel();
@@ -80,8 +80,9 @@ fn run() -> Result<(), Box<::std::error::Error>> {
     // Check url for base http and strip any white space
     let url = parse_url(matches.value_of("URL").unwrap())?;
     let rps = parse_rps(matches.value_of("RPS").unwrap())?;
-
-    let options = LoadOptions { url: url, rps: rps };
+    
+    // #TODO: Add a type argument to allow extendability of load drive types
+    let options = HttpOptions { url: url, rps: rps };
 
     match options.url.scheme() {
         "http" | "https" => options.load_drive(),
