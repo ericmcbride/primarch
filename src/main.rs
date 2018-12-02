@@ -8,13 +8,16 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::process;
 use reqwest::{Url, UrlError};
 use std::io::{Error, ErrorKind, Write};
+use std::sync::mpsc;
+use std::thread;
+
 
 
 // Main function that runs the run function.  The run function will return a result or error
 fn main() {
     match run() {
-        Ok(_) => println!("We need to drive a load below"),
-        Err(e) => {
+        Ok(_) => println!("Report coming soon...."),
+        Err(e) => { 
             panic!("Error {}", e);
             process::exit(1)
         }    
@@ -38,19 +41,33 @@ fn run() -> Result<(), Box<::std::error::Error>> {
 
     // Check url for base http and strip any white space
     let url = parse_url(matches.value_of("URL").unwrap())?;
-    println!("Url is {}", url);
 
     match url.scheme() {
-        "http" | "https" => load_driver(url), // load_drive function will be called here
+        "http" | "https" => load_driver(url),
         _ => generate_err(format!("Unsupported HTTP Protocol {}", url.scheme())),
     }
 }
 
 fn load_driver(url: Url) -> Result<(), Box<::std::error::Error>> {
     let client = reqwest::Client::new();
-    let res = client.post(url).send()?;
-    println!("Res is {:?}", res);
-    Ok(())
+    let (tx, rx) = mpsc::channel();
+    
+    for _ in 0..10 {
+        let tx = tx.clone();
+        let client = client.clone();
+        let url = url.clone();
+        thread::spawn(move || {
+            let res = client.post(url).send().unwrap();
+            tx.send(res)
+        });
+    } 
+    
+    let mut response_vector = Vec::new();
+    for _ in 0..10 {
+        let r = rx.recv().unwrap();
+        response_vector.push(r);
+    }
+    Ok(()) 
 }
 
 // #TODO: Move to other file
