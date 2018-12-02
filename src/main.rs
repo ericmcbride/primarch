@@ -30,6 +30,7 @@ impl LoadDriver for HttpOptions {
             let client = client.clone();
             let url = self.url.clone();
             thread::spawn(move || {
+                //#TODO fix this panic/handle it
                 let res = client.post(url).send().unwrap();
                 tx.send(res)
             });
@@ -80,7 +81,7 @@ fn run() -> Result<(), Box<::std::error::Error>> {
     // Check url for base http and strip any white space
     let url = parse_url(matches.value_of("URL").unwrap())?;
     let rps = parse_rps(matches.value_of("RPS").unwrap())?;
-    
+
     // #TODO: Add a type argument to allow extendability of load drive types
     let options = HttpOptions { url: url, rps: rps };
 
