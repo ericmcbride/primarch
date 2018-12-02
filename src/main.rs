@@ -41,11 +41,17 @@ fn run() -> Result<(), Box<::std::error::Error>> {
     println!("Url is {}", url);
 
     match url.scheme() {
-        "http" | "https" => Ok(()), // load_drive function will be called here
+        "http" | "https" => load_driver(url), // load_drive function will be called here
         _ => generate_err(format!("Unsupported HTTP Protocol {}", url.scheme())),
     }
 }
 
+fn load_driver(url: Url) -> Result<(), Box<::std::error::Error>> {
+    let client = reqwest::Client::new();
+    let res = client.post(url).send()?;
+    println!("Res is {:?}", res);
+    Ok(())
+}
 
 // #TODO: Move to other file
 // This will be the progress bar for the Load Driver
