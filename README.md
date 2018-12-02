@@ -5,7 +5,7 @@ Primarch is a load drive tool written in Rust.
 
 ## Current Usage
 ``` bash
-cargo run <url> 
+cargo run <url> <rps>
 ```
 in parent dir
 
