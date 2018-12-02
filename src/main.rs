@@ -9,6 +9,43 @@ use std::io::{Error, ErrorKind};
 use std::sync::mpsc;
 use std::thread;
 
+struct HttpOptions {
+    url: Url,
+    rps: u64,
+}
+
+trait LoadDriver {
+    fn load_drive(&self) -> Result<(), Box<::std::error::Error>>;
+}
+
+impl LoadDriver for HttpOptions {
+    fn load_drive(&self) -> Result<(), Box<::std::error::Error>> {
+        let client = reqwest::Client::new();
+        let (tx, rx) = mpsc::channel();
+
+        // #TODO Add a timer to spin up REQUESTS PER SECOND.  Something like a token bucket implemented
+        // right here
+        for _ in 0..self.rps {
+            let tx = tx.clone();
+            let client = client.clone();
+            let url = self.url.clone();
+            thread::spawn(move || {
+                let res = client.post(url).send().unwrap();
+                tx.send(res)
+            });
+        }
+
+        let mut response_vector = Vec::new();
+        for _ in 0..self.rps {
+            let r = rx.recv().unwrap();
+            response_vector.push(r);
+        }
+
+        println!("Response vector is {:?}", response_vector);
+        Ok(())
+    }
+}
+
 // Main function that runs the run function.  The run function will return a result or error
 fn main() {
     match run() {
@@ -43,10 +80,16 @@ fn run() -> Result<(), Box<::std::error::Error>> {
     // Check url for base http and strip any white space
     let url = parse_url(matches.value_of("URL").unwrap())?;
     let rps = parse_rps(matches.value_of("RPS").unwrap())?;
+    
+    // #TODO: Add a type argument to allow extendability of load drive types
+    let options = HttpOptions { url: url, rps: rps };
 
-    match url.scheme() {
-        "http" | "https" => load_driver(url, rps),
-        _ => generate_err(format!("Unsupported HTTP Protocol {}", url.scheme())),
+    match options.url.scheme() {
+        "http" | "https" => options.load_drive(),
+        _ => generate_err(format!(
+            "Unsupported HTTP Protocol {:?}",
+            options.url.scheme()
+        )),
     }
 }
 
@@ -54,33 +97,6 @@ fn run() -> Result<(), Box<::std::error::Error>> {
 fn parse_rps(rps: &str) -> Result<u64, Box<::std::error::Error>> {
     let rps: u64 = rps.parse().unwrap();
     Ok(rps)
-}
-
-// Load to be driven to given url. Spins up threads, and hits the url.  Returns a result enum.
-fn load_driver(url: Url, rps: u64) -> Result<(), Box<::std::error::Error>> {
-    let client = reqwest::Client::new();
-    let (tx, rx) = mpsc::channel();
-
-    // #TODO Add a timer to spin up REQUESTS PER SECOND.  Something like a token bucket implemented
-    // right here
-    for _ in 0..rps {
-        let tx = tx.clone();
-        let client = client.clone();
-        let url = url.clone();
-        thread::spawn(move || {
-            let res = client.post(url).send().unwrap();
-            tx.send(res)
-        });
-    }
-
-    let mut response_vector = Vec::new();
-    for _ in 0..rps {
-        let r = rx.recv().unwrap();
-        response_vector.push(r);
-    }
-
-    println!("Response vector is {:?}", response_vector);
-    Ok(())
 }
 
 // Helper function to generate the Result enum
