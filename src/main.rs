@@ -12,39 +12,50 @@ use std::thread;
 struct HttpOptions {
     url: Url,
     rps: u64,
+    http_verb: String, 
+    client: reqwest::Client,
 }
 
-trait LoadDriver {
-    fn load_drive(&self) -> Result<(), Box<::std::error::Error>>;
+// #TODO Make an Impl and A trait for the below helper methods
+fn post_request(client: reqwest::Client, url: Url) -> reqwest::Response {
+    client.post(url).send().unwrap()
 }
 
-impl LoadDriver for HttpOptions {
-    fn load_drive(&self) -> Result<(), Box<::std::error::Error>> {
-        let client = reqwest::Client::new();
-        let (tx, rx) = mpsc::channel();
+fn get_request(client: reqwest::Client, url: Url) -> reqwest::Response {
+    client.get(url).send().unwrap()
+}
+    
 
-        // #TODO Add a timer to spin up REQUESTS PER SECOND.  Something like a token bucket implemented
-        // right here
-        for _ in 0..self.rps {
-            let tx = tx.clone();
-            let client = client.clone();
-            let url = self.url.clone();
-            thread::spawn(move || {
-                //#TODO fix this panic/handle it
-                let res = client.post(url).send().unwrap();
-                tx.send(res)
-            });
-        }
+fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
+    let client = reqwest::Client::new();
+    let (tx, rx) = mpsc::channel();
 
-        let mut response_vector = Vec::new();
-        for _ in 0..self.rps {
-            let r = rx.recv().unwrap();
-            response_vector.push(r);
-        }
-
-        println!("Response vector is {:?}", response_vector);
-        Ok(())
+    // #TODO Add a timer to spin up REQUESTS PER SECOND.  Something like a token bucket implemented
+    // right here
+    for _ in 0..http.rps {
+        let tx = tx.clone();
+        let client = client.clone();
+        let url = http.url.clone();
+        let http_verb = http.http_verb.clone();
+        thread::spawn(move|| {
+            if http_verb == "POST" {
+                let res = post_request(client, url);
+                tx.send(res);
+            } else {
+                let res = get_request(client, url);
+                tx.send(res);
+            }
+        });
     }
+
+    let mut response_vector = Vec::new();
+    for _ in 0..http.rps {
+        let r = rx.recv().unwrap();
+        response_vector.push(r);
+    }
+
+    println!("Response vector is {:?}", response_vector);
+    Ok(())
 }
 
 // Main function that runs the run function.  The run function will return a result or error
@@ -76,17 +87,25 @@ fn run() -> Result<(), Box<::std::error::Error>> {
                 .takes_value(true)
                 .index(2)
                 .help("requests per second"),
+        ).arg(
+            Arg::with_name("HTTP-VERB")
+                .required(true)
+                .takes_value(true)
+                .index(3)
+                .help("Request type")
         ).get_matches();
 
     // Check url for base http and strip any white space
     let url = parse_url(matches.value_of("URL").unwrap())?;
     let rps = parse_rps(matches.value_of("RPS").unwrap())?;
-
+    let http_verb = matches.value_of("HTTP-VERB").unwrap();
+    let client = reqwest::Client::new();
+    
     // #TODO: Add a type argument to allow extendability of load drive types
-    let options = HttpOptions { url: url, rps: rps };
+    let options = HttpOptions { url: url, rps: rps, http_verb: http_verb.to_string(), client: client };
 
     match options.url.scheme() {
-        "http" | "https" => options.load_drive(),
+        "http" | "https" => load_drive(options),
         _ => generate_err(format!(
             "Unsupported HTTP Protocol {:?}",
             options.url.scheme()
