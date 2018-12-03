@@ -5,7 +5,7 @@ use std::thread;
 pub struct HttpOptions {
     pub url: reqwest::Url,
     pub rps: u64,
-    pub http_verb: String, 
+    pub http_verb: String,
     pub client: reqwest::Client,
 }
 
@@ -17,7 +17,6 @@ fn post_request(client: reqwest::Client, url: reqwest::Url) -> reqwest::Response
 fn get_request(client: reqwest::Client, url: reqwest::Url) -> reqwest::Response {
     client.get(url).send().unwrap()
 }
-    
 
 pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
     let client = reqwest::Client::new();
@@ -30,7 +29,7 @@ pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
         let client = client.clone();
         let url = http.url.clone();
         let http_verb = http.http_verb.clone();
-        thread::spawn(move|| {
+        thread::spawn(move || {
             if http_verb == "POST" {
                 let res = post_request(client, url);
                 tx.send(res);

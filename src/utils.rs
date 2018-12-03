@@ -1,5 +1,5 @@
-use std::io::{Error, ErrorKind};
 use reqwest::{Url, UrlError};
+use std::io::{Error, ErrorKind};
 
 // Convert rps from string to u64. Return result enum
 pub fn parse_rps(rps: &str) -> Result<u64, Box<::std::error::Error>> {

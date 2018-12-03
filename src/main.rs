@@ -4,8 +4,8 @@ extern crate reqwest;
 
 use clap::{App, Arg};
 
-mod utils;
 mod http;
+mod utils;
 
 // Main function that runs the run function.  The run function will return a result or error
 fn main() {
@@ -41,7 +41,7 @@ fn run() -> Result<(), Box<::std::error::Error>> {
                 .required(true)
                 .takes_value(true)
                 .index(3)
-                .help("Request type")
+                .help("Request type"),
         ).get_matches();
 
     // Check url for base http and strip any white space
@@ -49,9 +49,14 @@ fn run() -> Result<(), Box<::std::error::Error>> {
     let rps = utils::parse_rps(matches.value_of("RPS").unwrap())?;
     let http_verb = matches.value_of("HTTP-VERB").unwrap();
     let client = reqwest::Client::new();
-    
+
     // #TODO: Add a type argument to allow extendability of load drive types
-    let options = http::HttpOptions { url: url, rps: rps, http_verb: http_verb.to_string(), client: client };
+    let options = http::HttpOptions {
+        url: url,
+        rps: rps,
+        http_verb: http_verb.to_string(),
+        client: client,
+    };
 
     match options.url.scheme() {
         "http" | "https" => http::load_drive(options),
