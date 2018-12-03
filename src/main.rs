@@ -4,59 +4,8 @@ extern crate reqwest;
 
 use clap::{App, Arg};
 
-use reqwest::{Url, UrlError};
-use std::io::{Error, ErrorKind};
-use std::sync::mpsc;
-use std::thread;
-
-struct HttpOptions {
-    url: Url,
-    rps: u64,
-    http_verb: String, 
-    client: reqwest::Client,
-}
-
-// #TODO Make an Impl and A trait for the below helper methods
-fn post_request(client: reqwest::Client, url: Url) -> reqwest::Response {
-    client.post(url).send().unwrap()
-}
-
-fn get_request(client: reqwest::Client, url: Url) -> reqwest::Response {
-    client.get(url).send().unwrap()
-}
-    
-
-fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
-    let client = reqwest::Client::new();
-    let (tx, rx) = mpsc::channel();
-
-    // #TODO Add a timer to spin up REQUESTS PER SECOND.  Something like a token bucket implemented
-    // right here
-    for _ in 0..http.rps {
-        let tx = tx.clone();
-        let client = client.clone();
-        let url = http.url.clone();
-        let http_verb = http.http_verb.clone();
-        thread::spawn(move|| {
-            if http_verb == "POST" {
-                let res = post_request(client, url);
-                tx.send(res);
-            } else {
-                let res = get_request(client, url);
-                tx.send(res);
-            }
-        });
-    }
-
-    let mut response_vector = Vec::new();
-    for _ in 0..http.rps {
-        let r = rx.recv().unwrap();
-        response_vector.push(r);
-    }
-
-    println!("Response vector is {:?}", response_vector);
-    Ok(())
-}
+mod utils;
+mod http;
 
 // Main function that runs the run function.  The run function will return a result or error
 fn main() {
@@ -96,44 +45,19 @@ fn run() -> Result<(), Box<::std::error::Error>> {
         ).get_matches();
 
     // Check url for base http and strip any white space
-    let url = parse_url(matches.value_of("URL").unwrap())?;
-    let rps = parse_rps(matches.value_of("RPS").unwrap())?;
+    let url = utils::parse_url(matches.value_of("URL").unwrap())?;
+    let rps = utils::parse_rps(matches.value_of("RPS").unwrap())?;
     let http_verb = matches.value_of("HTTP-VERB").unwrap();
     let client = reqwest::Client::new();
     
     // #TODO: Add a type argument to allow extendability of load drive types
-    let options = HttpOptions { url: url, rps: rps, http_verb: http_verb.to_string(), client: client };
+    let options = http::HttpOptions { url: url, rps: rps, http_verb: http_verb.to_string(), client: client };
 
     match options.url.scheme() {
-        "http" | "https" => load_drive(options),
-        _ => generate_err(format!(
+        "http" | "https" => http::load_drive(options),
+        _ => utils::generate_err(format!(
             "Unsupported HTTP Protocol {:?}",
             options.url.scheme()
         )),
-    }
-}
-
-// Convert rps from string to u64. Return result enum
-fn parse_rps(rps: &str) -> Result<u64, Box<::std::error::Error>> {
-    let rps: u64 = rps.parse().unwrap();
-    Ok(rps)
-}
-
-// Helper function to generate the Result enum
-pub fn generate_err(err_msg: String) -> Result<(), Box<::std::error::Error>> {
-    Err(Box::new(Error::new(ErrorKind::Other, err_msg)))
-}
-
-// Make sure the url is a valid url.  Returns a result enum, with either a Url type or a UrlError
-// type.  If the error is a relative url without a base, primarch will correct that for the end
-// user, and dynamically append http:// to the relative url
-pub fn parse_url(url: &str) -> Result<Url, UrlError> {
-    match Url::parse(url) {
-        Ok(url) => Ok(url),
-        Err(error) if error == UrlError::RelativeUrlWithoutBase => {
-            let formatted_url = format!("{}{}", "http://", url);
-            Url::parse(formatted_url.as_str())
-        }
-        Err(error) => Err(error),
     }
 }
