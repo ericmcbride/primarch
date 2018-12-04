@@ -7,6 +7,8 @@ pub struct HttpOptions {
     pub rps: u64,
     pub http_verb: String,
     pub client: reqwest::Client,
+    pub duration: u64,
+    pub headers: Vec<String>,
 }
 
 // #TODO Make an Impl and A trait for the below helper methods
@@ -28,7 +30,8 @@ pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
         let tx = tx.clone();
         let client = client.clone();
         let url = http.url.clone();
-        let http_verb = http.http_verb.clone();
+        //let http_verb = http.http_verb.clone();
+        let http_verb = "POST".to_string();
         thread::spawn(move || {
             if http_verb == "POST" {
                 let res = post_request(client, url);

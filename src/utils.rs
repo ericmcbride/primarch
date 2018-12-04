@@ -2,9 +2,17 @@ use reqwest::{Url, UrlError};
 use std::io::{Error, ErrorKind};
 
 // Convert rps from string to u64. Return result enum
-pub fn parse_rps(rps: &str) -> Result<u64, Box<::std::error::Error>> {
-    let rps: u64 = rps.parse().unwrap();
-    Ok(rps)
+pub fn parse_u64(value: &str) -> Result<u64, Box<::std::error::Error>> {
+    let value: u64 = value.parse().unwrap();
+    Ok(value)
+}
+
+pub fn str_to_string(input: Vec<&str>) -> Vec<String> {
+    let mut string_vec = Vec::new();
+    for x in input {
+        string_vec.push(x.to_owned());
+    }
+    string_vec
 }
 
 // Helper function to generate the Result enum
