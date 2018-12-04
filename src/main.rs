@@ -1,4 +1,6 @@
+#[macro_use]
 extern crate clap;
+
 extern crate indicatif;
 extern crate reqwest;
 
@@ -20,43 +22,19 @@ fn main() {
 // Run function that will collect the arguments, and will validate the url, and then either kick
 // off a load test, or return an error to the main function
 fn run() -> Result<(), Box<::std::error::Error>> {
-    let matches = App::new("Primarch - Load-Driver")
-        .version("0.1.0")
-        .author("Eric McBride <ericmcbridedeveloper@gmail.com>")
-        .about("CLI Load Driver")
-        .arg(
-            Arg::with_name("URL")
-                .required(true)
-                .takes_value(true)
-                .index(1)
-                .help("url to load-test"),
-        ).arg(
-            Arg::with_name("RPS")
-                .required(true)
-                .takes_value(true)
-                .index(2)
-                .help("requests per second"),
-        ).arg(
-            Arg::with_name("HTTP-VERB")
-                .required(true)
-                .takes_value(true)
-                .index(3)
-                .help("Request type"),
-        ).get_matches();
+    let args = clap_app!(primarch =>
+        (version: "1.0")
+        (author: "Eric McBride <ericmcbridedeveloper@gmail.com>")
+        (about: "Load Driver written in Rust")
+        (@arg URL: -u --url +required +takes_value "URL to load test")
+        (@arg RPS: -r --requests_per_second +required +takes_value "Requests Per Second")
+        (@arg HTTP_VERB: --http_verb +required +takes_value "HTTP Verb")
+        (@arg BODY: -b --body +takes_value "Request body file")
+        (@arg DURATION: -d --duration +takes_value "Duration of Test in seconds (0 is forever)")
+        (@arg HEADER: ... --header +takes_value "Request Headers (multiple can be set")
+    ).get_matches();
 
-    // Check url for base http and strip any white space
-    let url = utils::parse_url(matches.value_of("URL").unwrap())?;
-    let rps = utils::parse_rps(matches.value_of("RPS").unwrap())?;
-    let http_verb = matches.value_of("HTTP-VERB").unwrap();
-    let client = reqwest::Client::new();
-
-    // #TODO: Add a type argument to allow extendability of load drive types
-    let options = http::HttpOptions {
-        url: url,
-        rps: rps,
-        http_verb: http_verb.to_string(),
-        client: client,
-    };
+    let options = utils::set_args(&args)?;
 
     match options.url.scheme() {
         "http" | "https" => http::load_drive(options),
