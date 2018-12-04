@@ -4,7 +4,7 @@ extern crate clap;
 extern crate indicatif;
 extern crate reqwest;
 
-use clap::{clap_app, App, Arg, ArgMatches};
+use clap::{App, Arg};
 
 mod http;
 mod utils;
@@ -34,7 +34,7 @@ fn run() -> Result<(), Box<::std::error::Error>> {
         (@arg HEADER: ... --header +takes_value "Request Headers (multiple can be set")
     ).get_matches();
 
-    let options = set_args(&args)?;
+    let options = utils::set_args(&args)?;
 
     match options.url.scheme() {
         "http" | "https" => http::load_drive(options),
@@ -43,43 +43,4 @@ fn run() -> Result<(), Box<::std::error::Error>> {
             options.url.scheme()
         )),
     }
-}
-
-// Sets arguments for HTTP Client.
-fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error::Error>> {
-    let url = utils::parse_url(args.value_of("URL").unwrap())?;
-    let rps = utils::parse_u64(args.value_of("RPS").unwrap())?;
-    let http_verb = args.value_of("HTTP_VERB").unwrap();
-    let string_verb = http_verb.to_owned();
-
-    if let Some(body) = args.value_of("BODY") {
-        body;
-    } else {
-        let body = "".to_string();
-    };
-
-    let mut duration = "0";
-    if let Some(duration) = args.value_of("DURATION") {
-        duration;
-    }
-
-    let u64_duration = utils::parse_u64(duration).unwrap();
-
-    //let mut owned_headers = Vec::new()
-    let mut headers = Vec::new();
-    if let Some(headers) = args.values_of("HEADER") {
-        headers;
-    }
-
-    let owned_headers = utils::str_to_string(headers);
-
-    let client = reqwest::Client::new();
-    Ok(http::HttpOptions {
-        url: url,
-        rps: rps,
-        http_verb: string_verb,
-        client: client,
-        duration: u64_duration,
-        headers: owned_headers,
-    })
 }
