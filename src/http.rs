@@ -30,8 +30,8 @@ pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
         let tx = tx.clone();
         let client = client.clone();
         let url = http.url.clone();
-        //let http_verb = http.http_verb.clone();
-        let http_verb = "POST".to_string();
+        let http_verb = http.http_verb.clone();
+        
         thread::spawn(move || {
             if http_verb == "POST" {
                 let res = post_request(client, url);
