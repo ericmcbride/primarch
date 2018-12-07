@@ -1,8 +1,7 @@
-use clap::{ArgMatches};
+use clap::ArgMatches;
+use http;
 use reqwest::{Url, UrlError};
 use std::io::{Error, ErrorKind};
-use http;
-
 
 // Convert rps from string to u64. Return result enum
 fn parse_u64(value: &str) -> Result<u64, Box<::std::error::Error>> {
@@ -10,7 +9,7 @@ fn parse_u64(value: &str) -> Result<u64, Box<::std::error::Error>> {
     Ok(value)
 }
 
-fn str_to_string(input: Vec<&str>) -> Vec<String> {
+pub fn str_to_string(input: Vec<&str>) -> Vec<String> {
     let mut string_vec = Vec::new();
     for x in input {
         string_vec.push(x.to_owned());
@@ -44,34 +43,34 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
     let http_verb = args.value_of("HTTP_VERB").unwrap();
     let string_verb = http_verb.to_owned();
 
-    if let Some(body) = args.value_of("BODY") {
-        body;
+    let body = if let Some(body) = args.value_of("BODY") {
+        body
     } else {
-        let body = "".to_string();
+        ""
     };
 
-    let mut duration = "0";
-    if let Some(duration) = args.value_of("DURATION") {
-        duration;
-    }
+    let duration = if let Some(duration) = args.value_of("DURATION") {
+        duration
+    } else {
+        "0"
+    };
 
     let u64_duration = parse_u64(duration).unwrap();
 
-    //let mut owned_headers = Vec::new()
-    let mut headers = Vec::new();
-    if let Some(headers) = args.values_of("HEADER") {
-        headers;
-    }
+    let headers: Vec<&str> = if let Some(_headers) = args.values_of("HEADER") {
+        args.values_of("HEADER").unwrap().collect()
+    } else {
+        Vec::new()
+    };
 
     let owned_headers = str_to_string(headers);
 
-    let client = reqwest::Client::new();
     Ok(http::HttpOptions {
         url: url,
         rps: rps,
         http_verb: string_verb,
-        client: client,
         duration: u64_duration,
         headers: owned_headers,
+        body: body.to_string(),
     })
 }

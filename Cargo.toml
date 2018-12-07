@@ -6,4 +6,4 @@ authors = ["Eric McBride <ericmcbridedeveloper@gmail.com>"]
 [dependencies]
 clap = "2.31.2"
 indicatif = "0.10.1"
-reqwest = "*"
+reqwest = "0.9.5"

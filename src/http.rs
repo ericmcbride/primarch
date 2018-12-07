@@ -6,40 +6,63 @@ pub struct HttpOptions {
     pub url: reqwest::Url,
     pub rps: u64,
     pub http_verb: String,
-    pub client: reqwest::Client,
     pub duration: u64,
     pub headers: Vec<String>,
+    pub body: String,
+}
+
+fn create_reqwest_headers(headers: &Vec<String>) -> reqwest::header::HeaderMap {
+    let mut new_headers = reqwest::header::HeaderMap::new();
+
+    for head in headers {
+        let mut split_vect: Vec<&str> = head.split(":").collect();
+        let header_name =
+            reqwest::header::HeaderName::from_bytes(split_vect[0].as_bytes()).unwrap();
+        let header_value =
+            reqwest::header::HeaderValue::from_bytes(split_vect[1].as_bytes()).unwrap();
+
+        new_headers.insert(header_name, header_value);
+    }
+    new_headers
 }
 
 // #TODO Make an Impl and A trait for the below helper methods
-fn post_request(client: reqwest::Client, url: reqwest::Url) -> reqwest::Response {
-    client.post(url).send().unwrap()
+fn post_request(
+    client: reqwest::Client,
+    url: reqwest::Url,
+    headers: reqwest::header::HeaderMap,
+) -> reqwest::Response {
+    client.post(url).headers(headers).send().unwrap()
 }
 
-fn get_request(client: reqwest::Client, url: reqwest::Url) -> reqwest::Response {
-    client.get(url).send().unwrap()
+fn get_request(
+    client: reqwest::Client,
+    url: reqwest::Url,
+    headers: reqwest::header::HeaderMap,
+) -> reqwest::Response {
+    client.get(url).headers(headers).send().unwrap()
 }
 
 pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
-    let client = reqwest::Client::new();
     let (tx, rx) = mpsc::channel();
+    let client = reqwest::Client::new();
 
-    // #TODO Add a timer to spin up REQUESTS PER SECOND.  Something like a token bucket implemented
-    // right here
+    let headers = create_reqwest_headers(&http.headers);
+
+    //#TODO Fix this logic
+    let http_fn = get_request;
+    if http.http_verb == "POST" {
+        let http_fn = post_request;
+    }
+
     for _ in 0..http.rps {
         let tx = tx.clone();
         let client = client.clone();
         let url = http.url.clone();
-        let http_verb = http.http_verb.clone();
-        
+        let headers = headers.clone();
         thread::spawn(move || {
-            if http_verb == "POST" {
-                let res = post_request(client, url);
-                tx.send(res);
-            } else {
-                let res = get_request(client, url);
-                tx.send(res);
-            }
+            let res = http_fn(client, url, headers);
+            tx.send(res);
         });
     }
 
