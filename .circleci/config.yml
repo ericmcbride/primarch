@@ -27,8 +27,7 @@ jobs:
       - run:
           name: Run all tests
           command: cargo test --all
-      
-      
+            
     image-build:
       orbs:
         anchore: anchore/anchore-engine@1.0.0
@@ -59,3 +58,11 @@ workflows:
               only: /.*/
             branches:
               only: /.*/
+
+      - image-build:
+          requires:
+            - build
+          filters:
+            branches:
+              only: /.*/
+
