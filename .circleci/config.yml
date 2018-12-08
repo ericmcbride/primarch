@@ -39,7 +39,7 @@ jobs:
           name: build container
           command: docker login -u ${DOCKER_REGISTRY_USER} -p ${DOCKER_REGISTRY_PASSWORD} && make tag
       - anchore/analyze_local_image:
-          image_name: ericmcbridedeveloper/${CIRCLE_PROJECT_REPONAME}:ci-${CIRCLE_SHA1}
+          image_name: docker.io/ericmcbridedeveloper/${CIRCLE_PROJECT_REPONAME}:ci-${CIRCLE_SHA1}
           timeout: '500'
           analysis_fail: False
       - run:
@@ -63,4 +63,3 @@ workflows:
           filters:
             branches:
               only: /.*/
-
