@@ -1,5 +1,5 @@
 IMAGE_NAME = "ericmcbridedeveloper/primarch"
-GIT_HASH = $(shell git rev-parse --short=7 HEAD)
+GIT_HASH = $(shell git rev-parse HEAD)
 
 tag:
 	docker build -t ${IMAGE_NAME}:ci-${GIT_HASH} .
