@@ -7,6 +7,9 @@ tag:
 push:
 	docker push ${IMAGE_NAME}:ci-${GIT_HASH}
 
+login:
+	@docker login -u ${DOCKER_REGISTRY_USER} -p ${DOCKER_REGISTRY_PASSWORD}
+
 build:
 	cargo build
 
