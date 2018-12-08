@@ -29,7 +29,7 @@ jobs:
           command: cargo test --all
       
       
-  image-build:
+    image-build:
       orbs:
         anchore: anchore/anchore-engine@1.0.0
       jobs:
