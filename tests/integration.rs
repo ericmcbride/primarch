@@ -69,7 +69,7 @@ mod integration {
     fn calling_primarch_without_verb() {
         let output = Command::new("./target/debug/primarch")
             .args(&["--url", "google.com"])
-            .args(&["--http_verb", "POST"])
+            .args(&["--requests_per_second", "5"])
             .output()
             .expect("failed to execute process");
         assert!(String::from_utf8_lossy(&output.stderr).contains(WITHOUT_VERB_ARGS_OUTPUT));
