@@ -41,7 +41,7 @@ jobs:
       - anchore/analyze_local_image:
           image_name: ericmcbridedeveloper/${CIRCLE_PROJECT_REPONAME}:ci-${CIRCLE_SHA1}
           timeout: '500'
-          analysis_fail: True
+          analysis_fail: False
       - run:
           name: Push to Docker Hub
           command: make push
