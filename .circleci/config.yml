@@ -1,0 +1,65 @@
+version: 2.1
+orbs: 
+  anchore: anchore/anchore-engine@1.0.0
+jobs:
+  build:
+    docker:
+      - image: circleci/rust:1.30.0-stretch
+    steps:
+      - checkout
+      - run:
+          name: Version information
+          command: rustc --version; cargo --version; rustup --version
+      - run:
+          name: Calculate dependencies
+          command: cargo generate-lockfile
+      - restore_cache:
+          keys:
+            - v4-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
+      - run:
+          name: Build all targets
+          command: cargo build --all --all-targets
+      - save_cache:
+          paths:
+            - /usr/local/cargo/registry
+            - target/debug/.fingerprint
+            - target/debug/build
+            - target/debug/deps
+          key: v4-cargo-cache-{{ arch }}-{{ checksum "Cargo.lock" }}
+      - run:
+          name: Run all tests
+          command: cargo test --all
+            
+  image-build:
+    working_directory: ~/app/primarch
+    executor: anchore/anchore_engine
+    steps:
+      - checkout
+      - run:
+          name: build container
+          command: docker login -u ${DOCKER_REGISTRY_USER} -p ${DOCKER_REGISTRY_PASSWORD} && make tag
+      - anchore/analyze_local_image:
+          image_name: docker.io/ericmcbridedeveloper/${CIRCLE_PROJECT_REPONAME}:ci-${CIRCLE_SHA1}
+          timeout: '500'
+          analysis_fail: False
+      - run:
+          name: Push to Docker Hub
+          command: make push
+
+workflows:
+  version: 2
+  primarch-pipeline:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: /.*/
+
+      - image-build:
+          requires:
+            - build
+          filters:
+            branches:
+              only: /.*/
