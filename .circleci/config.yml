@@ -19,7 +19,7 @@ jobs:
       - run:
           name: Build all targets
           command: cargo build --all --all-targets
-      - save_cache:
+      - save_cche:
           paths:
             - /usr/local/cargo/registry
             - target/debug/.fingerprint
@@ -37,14 +37,14 @@ jobs:
       - checkout
       - run:
           name: build container
-          command: Make login && Make Tag
+          command: make login && make tag
       - anchore/analyze_local_image:
           image_name: ericmcbridedeveloper/${CIRCLE_PROJECT_REPONAME}:ci-${CIRCLE_SHA1}
           timeout: '500'
           analysis_fail: True
       - run:
           name: Push to Docker Hub
-          command: Make push
+          command: make push
 
 workflows:
   version: 2
