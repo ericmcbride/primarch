@@ -1,3 +1,15 @@
+IMAGE_NAME = "ericmcbridedeveloper/primarch"
+GIT_HASH = $(shell git rev-parse --short=7 HEAD)
+
+tag:
+	docker build -t ${IMAGE_NAME}:ci-${GIT_HASH} .
+
+login:
+	docker login -u ${DOCKER_REGISTRY_USER} -p ${DOCKER_REGISTRY_PASSWORD}
+
+push:
+	docker push ${IMAGE_NAME}:ci-${GIT_HASH}
+
 build:
 	cargo build
 

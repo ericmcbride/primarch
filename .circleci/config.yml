@@ -27,6 +27,27 @@ jobs:
       - run:
           name: Run all tests
           command: cargo test --all
+      
+      
+  image-build:
+      orbs:
+        anchore: anchore/anchore-engine@1.0.0
+      jobs:
+        local_image_scan:
+          executor: anchore/anchore_engine
+          steps:
+            - checkout
+            - run:
+                name: build container
+                command: Make login && Make Tag
+            - anchore/analyze_local_image:
+                image_name: ericmcbridedeveloper/${CIRCLE_PROJECT_REPONAME}:ci-${CIRCLE_SHA1}
+                timeout: '500'
+                analysis_fail: True
+            - run:
+                name: Push to Docker Hub
+                command: Make push
+
 
 workflows:
   version: 2
