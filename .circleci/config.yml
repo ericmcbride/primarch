@@ -37,7 +37,7 @@ jobs:
       - checkout
       - run:
           name: build container
-          command: make login && make tag
+          command: docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD && make tag
       - anchore/analyze_local_image:
           image_name: ericmcbridedeveloper/${CIRCLE_PROJECT_REPONAME}:ci-${CIRCLE_SHA1}
           timeout: '500'
