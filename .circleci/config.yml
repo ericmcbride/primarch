@@ -19,7 +19,7 @@ jobs:
       - run:
           name: Build all targets
           command: cargo build --all --all-targets
-      - save_cache:
+      - save_cche:
           paths:
             - /usr/local/cargo/registry
             - target/debug/.fingerprint
