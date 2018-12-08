@@ -32,12 +32,6 @@ fn run() -> Result<(), Box<::std::error::Error>> {
         (@arg HEADER: ... --header +takes_value "Request Headers (multiple can be set")
     ).get_matches();
 
-    let body = if let Some(body) = args.value_of("BODY") {
-        body
-    } else {
-        ""
-    };
-    println!("body is {:?}", body);
     let options = utils::set_args(&args)?;
 
     match options.url.scheme() {

@@ -1,7 +1,9 @@
 use clap::ArgMatches;
 use http;
 use reqwest::{Url, UrlError};
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Read};
+
+use std::fs::File;
 
 // Convert rps from string to u64. Return result enum
 fn parse_u64(value: &str) -> Result<u64, Box<::std::error::Error>> {
@@ -36,6 +38,22 @@ fn parse_url(url: &str) -> Result<Url, UrlError> {
     }
 }
 
+// Create headers for the requests
+fn create_reqwest_headers(headers: &Vec<String>) -> reqwest::header::HeaderMap {
+    let mut new_headers = reqwest::header::HeaderMap::new();
+
+    for head in headers {
+        let mut split_vect: Vec<&str> = head.split(":").collect();
+        let header_name =
+            reqwest::header::HeaderName::from_bytes(split_vect[0].as_bytes()).unwrap();
+        let header_value =
+            reqwest::header::HeaderValue::from_bytes(split_vect[1].as_bytes()).unwrap();
+
+        new_headers.insert(header_name, header_value);
+    }
+    new_headers
+}
+
 // Sets arguments for HTTP Client.
 pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error::Error>> {
     let url = parse_url(args.value_of("URL").unwrap())?;
@@ -48,6 +66,7 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
     } else {
         ""
     };
+    let json_body = open_file(body.to_string()).unwrap();
 
     let duration = if let Some(duration) = args.value_of("DURATION") {
         duration
@@ -57,20 +76,27 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
 
     let u64_duration = parse_u64(duration).unwrap();
 
-    let headers: Vec<&str> = if let Some(_headers) = args.values_of("HEADER") {
+    let headers: Vec<&str> = if let Some(headers) = args.values_of("HEADER") {
         args.values_of("HEADER").unwrap().collect()
     } else {
         Vec::new()
     };
 
     let owned_headers = str_to_string(headers);
-
+    let new_headers = create_reqwest_headers(&owned_headers);
     Ok(http::HttpOptions {
         url: url,
         rps: rps,
         http_verb: string_verb,
         duration: u64_duration,
-        headers: owned_headers,
-        body: body.to_string(),
+        headers: new_headers,
+        body: json_body,
     })
+}
+
+fn open_file(body: String) -> Result<String, Box<::std::error::Error>> {
+    let mut file = File::open(body).unwrap();
+    let mut data = String::new();
+    file.read_to_string(&mut data).unwrap();
+    Ok(data)
 }
