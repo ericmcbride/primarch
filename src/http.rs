@@ -17,13 +17,9 @@ fn post_request(
     url: reqwest::Url,
     headers: reqwest::header::HeaderMap,
     body: String,
-) -> reqwest::Response {
-    client
-        .post(url)
-        .headers(headers)
-        .json(&body)
-        .send()
-        .unwrap()
+) -> Result<reqwest::Response, Box<::std::error::Error>> {
+    let resp = client.post(url).headers(headers).json(&body).send()?;
+    Ok(resp)
 }
 
 fn get_request(
@@ -31,8 +27,9 @@ fn get_request(
     url: reqwest::Url,
     headers: reqwest::header::HeaderMap,
     _: String,
-) -> reqwest::Response {
-    client.get(url).headers(headers).send().unwrap()
+) -> Result<reqwest::Response, Box<::std::error::Error>> {
+    let resp = client.get(url).headers(headers).send()?;
+    Ok(resp)
 }
 
 pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
@@ -52,14 +49,16 @@ pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
         let headers = http.headers.clone();
         let body = http.body.clone();
         thread::spawn(move || {
-            let res = http_fn(client, url, headers, body);
+            // #TODO: figure out error handling in threads i.e. invalid urls and stuff will
+            // panci right now
+            let res = http_fn(client, url, headers, body).unwrap();
             tx.send(res);
         });
     }
 
     let mut response_vector = Vec::new();
     for _ in 0..http.rps {
-        let r = rx.recv().unwrap();
+        let r = rx.recv()?;
         response_vector.push(r);
     }
 

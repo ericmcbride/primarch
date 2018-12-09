@@ -7,8 +7,8 @@ use std::fs::File;
 
 // Convert rps from string to u64. Return result enum
 fn parse_u64(value: &str) -> Result<u64, Box<::std::error::Error>> {
-    let value: u64 = value.parse().unwrap();
-    Ok(value)
+    let val: u64 = value.parse()?;
+    Ok(val)
 }
 
 pub fn str_to_string(input: Vec<&str>) -> Vec<String> {
@@ -39,19 +39,19 @@ fn parse_url(url: &str) -> Result<Url, UrlError> {
 }
 
 // Create headers for the requests
-fn create_reqwest_headers(headers: &Vec<String>) -> reqwest::header::HeaderMap {
+fn create_reqwest_headers(
+    headers: &Vec<String>,
+) -> Result<reqwest::header::HeaderMap, Box<::std::error::Error>> {
     let mut new_headers = reqwest::header::HeaderMap::new();
 
     for head in headers {
         let mut split_vect: Vec<&str> = head.split(":").collect();
-        let header_name =
-            reqwest::header::HeaderName::from_bytes(split_vect[0].as_bytes()).unwrap();
-        let header_value =
-            reqwest::header::HeaderValue::from_bytes(split_vect[1].as_bytes()).unwrap();
+        let header_name = reqwest::header::HeaderName::from_bytes(split_vect[0].as_bytes())?;
+        let header_value = reqwest::header::HeaderValue::from_bytes(split_vect[1].as_bytes())?;
 
         new_headers.insert(header_name, header_value);
     }
-    new_headers
+    Ok(new_headers)
 }
 
 // Sets arguments for HTTP Client.
@@ -66,15 +66,15 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
     } else {
         ""
     };
-    let json_body = open_file(body.to_string()).unwrap();
 
+    let json_body = open_file(body.to_string())?;
     let duration = if let Some(duration) = args.value_of("DURATION") {
         duration
     } else {
         "0"
     };
 
-    let u64_duration = parse_u64(duration).unwrap();
+    let u64_duration = parse_u64(duration)?;
 
     let headers: Vec<&str> = if let Some(headers) = args.values_of("HEADER") {
         args.values_of("HEADER").unwrap().collect()
@@ -83,7 +83,7 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
     };
 
     let owned_headers = str_to_string(headers);
-    let new_headers = create_reqwest_headers(&owned_headers);
+    let new_headers = create_reqwest_headers(&owned_headers)?;
     Ok(http::HttpOptions {
         url: url,
         rps: rps,
@@ -95,8 +95,8 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
 }
 
 fn open_file(body: String) -> Result<String, Box<::std::error::Error>> {
-    let mut file = File::open(body).unwrap();
+    let mut file = File::open(body)?;
     let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
+    file.read_to_string(&mut data)?;
     Ok(data)
 }
