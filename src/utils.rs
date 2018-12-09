@@ -84,14 +84,15 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
 
     let owned_headers = str_to_string(headers);
     let new_headers = create_reqwest_headers(&owned_headers)?;
-    Ok(http::HttpOptions {
+    let options: http::HttpOptions = http::HttpOptions {
         url: url,
         rps: rps,
         http_verb: string_verb,
         duration: u64_duration,
         headers: new_headers,
         body: json_body,
-    })
+    };
+    Ok(options)
 }
 
 fn open_file(body: String) -> Result<String, Box<::std::error::Error>> {
