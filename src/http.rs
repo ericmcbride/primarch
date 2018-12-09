@@ -1,6 +1,7 @@
 use reqwest;
 use std::sync::mpsc;
 use std::thread;
+use utils;
 
 pub struct HttpOptions {
     pub url: reqwest::Url,
@@ -17,13 +18,9 @@ fn post_request(
     url: reqwest::Url,
     headers: reqwest::header::HeaderMap,
     body: String,
-) -> reqwest::Response {
-    client
-        .post(url)
-        .headers(headers)
-        .json(&body)
-        .send()
-        .unwrap()
+) -> Result<reqwest::Response, reqwest::Error> {
+    let resp = client.post(url).headers(headers).json(&body).send()?;
+    Ok(resp)
 }
 
 fn get_request(
@@ -31,8 +28,9 @@ fn get_request(
     url: reqwest::Url,
     headers: reqwest::header::HeaderMap,
     _: String,
-) -> reqwest::Response {
-    client.get(url).headers(headers).send().unwrap()
+) -> Result<reqwest::Response, reqwest::Error> {
+    let resp = client.get(url).headers(headers).send()?;
+    Ok(resp)
 }
 
 pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
@@ -57,12 +55,10 @@ pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
         });
     }
 
-    let mut response_vector = Vec::new();
     for _ in 0..http.rps {
-        let r = rx.recv().unwrap();
-        response_vector.push(r);
+        // #TODO Decide what statistics we want to report
+        println!("Received: {:?}", rx.recv()?);
     }
 
-    println!("Response vector is {:?}", response_vector);
     Ok(())
 }
