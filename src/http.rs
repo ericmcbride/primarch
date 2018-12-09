@@ -57,7 +57,7 @@ pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
 
     for _ in 0..http.rps {
         // #TODO Decide what statistics we want to report
-        println!("Got {:?}", rx.recv());
+        println!("Received: {:?}", rx.recv()?);
     }
 
     Ok(())
