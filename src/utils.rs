@@ -66,7 +66,7 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
     } else {
         ""
     };
-
+    
     let json_body = open_file(body.to_string())?;
     let duration = if let Some(duration) = args.value_of("DURATION") {
         duration
@@ -76,7 +76,7 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
 
     let u64_duration = parse_u64(duration)?;
 
-    let headers: Vec<&str> = if let Some(headers) = args.values_of("HEADER") {
+    let headers: Vec<&str> = if let Some(_headers) = args.values_of("HEADER") {
         args.values_of("HEADER").unwrap().collect()
     } else {
         Vec::new()
@@ -84,7 +84,7 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
 
     let owned_headers = str_to_string(headers);
     let new_headers = create_reqwest_headers(&owned_headers)?;
-    let options: http::HttpOptions = http::HttpOptions {
+    let options = http::HttpOptions {
         url: url,
         rps: rps,
         http_verb: string_verb,
