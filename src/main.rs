@@ -6,6 +6,7 @@ extern crate reqwest;
 
 mod http;
 mod utils;
+use http::LoadDriver;
 
 // Main function that runs the run function.  The run function will return a result or error
 fn main() {
@@ -35,7 +36,7 @@ fn run() -> Result<(), Box<::std::error::Error>> {
     let options = utils::set_args(&args)?;
 
     match options.url.scheme() {
-        "http" | "https" => http::load_drive(options),
+        "http" | "https" => options.load_driver(),
         _ => utils::generate_err(format!(
             "Unsupported HTTP Protocol {:?}",
             options.url.scheme()

@@ -62,35 +62,35 @@ pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error
     let string_verb = http_verb.to_owned();
 
     let body = if let Some(body) = args.value_of("BODY") {
-        body
+        let new_body = open_file(body.to_string())?;
+        new_body
     } else {
-        ""
+        "".to_string()
     };
 
-    let json_body = open_file(body.to_string())?;
-    let duration = if let Some(duration) = args.value_of("DURATION") {
-        duration
+    let duration = if let Some(dur) = args.value_of("DURATION") {
+        let d = parse_u64(dur)?;
+        d
     } else {
-        "0"
+        let d = parse_u64("0")?;
+        d
     };
 
-    let u64_duration = parse_u64(duration)?;
-
-    let headers: Vec<&str> = if let Some(headers) = args.values_of("HEADER") {
-        args.values_of("HEADER").unwrap().collect()
+    let headers: reqwest::header::HeaderMap = if let Some(_) = args.values_of("HEADER") {
+        let h = args.values_of("HEADER").unwrap().collect();
+        let owned_headers = str_to_string(h);
+        create_reqwest_headers(&owned_headers)?
     } else {
-        Vec::new()
+        reqwest::header::HeaderMap::new()
     };
 
-    let owned_headers = str_to_string(headers);
-    let new_headers = create_reqwest_headers(&owned_headers)?;
     Ok(http::HttpOptions {
         url: url,
         rps: rps,
         http_verb: string_verb,
-        duration: u64_duration,
-        headers: new_headers,
-        body: json_body,
+        duration: duration,
+        headers: headers,
+        body: body,
     })
 }
 
