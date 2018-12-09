@@ -53,9 +53,7 @@ impl LoadDriver for HttpOptions {
             let headers = self.headers.clone();
             let body = self.body.clone();
 
-            thread::spawn(move || {
-                tx.send(resp(url, headers, body))
-            });
+            thread::spawn(move || tx.send(resp(url, headers, body)));
         }
 
         for _ in 0..rps {
