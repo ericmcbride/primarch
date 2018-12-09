@@ -1,6 +1,7 @@
 use reqwest;
 use std::sync::mpsc;
 use std::thread;
+use utils;
 
 pub struct HttpOptions {
     pub url: reqwest::Url,
@@ -17,7 +18,7 @@ fn post_request(
     url: reqwest::Url,
     headers: reqwest::header::HeaderMap,
     body: String,
-) -> Result<reqwest::Response, Box<::std::error::Error>> {
+) -> Result<reqwest::Response, reqwest::Error> {
     let resp = client.post(url).headers(headers).json(&body).send()?;
     Ok(resp)
 }
@@ -27,7 +28,7 @@ fn get_request(
     url: reqwest::Url,
     headers: reqwest::header::HeaderMap,
     _: String,
-) -> Result<reqwest::Response, Box<::std::error::Error>> {
+) -> Result<reqwest::Response, reqwest::Error> {
     let resp = client.get(url).headers(headers).send()?;
     Ok(resp)
 }
@@ -49,19 +50,15 @@ pub fn load_drive(http: HttpOptions) -> Result<(), Box<::std::error::Error>> {
         let headers = http.headers.clone();
         let body = http.body.clone();
         thread::spawn(move || {
-            // #TODO: figure out error handling in threads i.e. invalid urls and stuff will
-            // panci right now
-            let res = http_fn(client, url, headers, body).unwrap();
+            let res = http_fn(client, url, headers, body);
             tx.send(res);
         });
     }
 
-    let mut response_vector = Vec::new();
     for _ in 0..http.rps {
-        let r = rx.recv()?;
-        response_vector.push(r);
+        // #TODO Decide what statistics we want to report
+        println!("Got {:?}", rx.recv());
     }
 
-    println!("Response vector is {:?}", response_vector);
     Ok(())
 }
