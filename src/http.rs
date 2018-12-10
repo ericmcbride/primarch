@@ -2,8 +2,7 @@ use reqwest::header::HeaderMap;
 use reqwest::{Client, Error, Response, Url};
 use std::sync::mpsc;
 use std::thread;
-use std::time::{Instant};
-
+use std::time::{Duration, Instant};
 
 pub struct HttpOptions {
     pub url: reqwest::Url,
@@ -16,7 +15,12 @@ pub struct HttpOptions {
 
 // #TODO: See if we can get these 2 functions into an impl for HttpOptions.  Calling the 2
 // methods from load_driver seemd to be an issue, even when passing self as a mutable reference.
-fn post_request(client: Client, url: Url, headers: HeaderMap, body: String) -> Result<Response, Error> {
+fn post_request(
+    client: Client,
+    url: Url,
+    headers: HeaderMap,
+    body: String,
+) -> Result<Response, Error> {
     let resp = client.post(url).headers(headers).json(&body).send()?;
     Ok(resp)
 }
@@ -40,31 +44,49 @@ impl LoadDriver for HttpOptions {
             "GET" => get_request,
             _ => get_request, // defaults
         };
-        
+
+        //#TODO Improve performance of this whole section and code quality and then odd the
+        //infinite version of it for long running processes
         println!("Processing requests...");
         let now = Instant::now();
-        for _ in 0..rps {
-            let tx = tx.clone();
-            let url = self.url.clone();
-            let headers = self.headers.clone();
-            let body = self.body.clone();
-            let client = client.clone();
-            thread::spawn(move || tx.send(resp(client, url, headers, body)));
-        }
-        
-        println!("Took {} ms to process", now.elapsed().subsec_millis());
-        let mut count = 0;
-        let mut err_count = 0;
+        while now.elapsed() <= Duration::new(self.duration, 0) {
+            let execution_time = Instant::now();
+            for i in 0..rps {
+                let tx = tx.clone();
+                let url = self.url.clone();
+                let headers = self.headers.clone();
+                let body = self.body.clone();
+                let client = client.clone();
+                let duration = self.duration.clone();
 
-        for _ in 0..rps {
-            let resp = rx.recv()?;
-            match resp {
-                Ok(_) => count += 1,
-                Err(_) => err_count += 1, // #TODO establish baselines for whats an error
+                //  If requests and time elapsed is less then or equal to duration of test
+                if i == (rps - 1) && &now.elapsed().subsec_millis() <= &(duration as u32) {
+                    let elapsed_time = Instant::now();
+                    let sleep_time =
+                        1000 as u32 - elapsed_time.duration_since(execution_time).subsec_millis();
+                    let duration = Duration::from_millis(sleep_time as u64);
+                    println!("Sleep time is {:?}", duration);
+                    thread::sleep(duration);
+                }
+
+                thread::spawn(move || tx.send(resp(client, url, headers, body)));
+                continue;
             }
+
+            let mut count = 0;
+            let mut err_count = 0;
+
+            //#TODO: Figure out why reporting takes so long and sum up ALL instaed of in chunks
+            for _ in 0..rps {
+                match rx.recv() {
+                    Ok(_) => count += 1,
+                    Err(_) => err_count += 1, // #TODO establish baselines for whats an error
+                }
+            }
+
+            println!("Count is {}", count);
+            println!("Err count is {}", err_count);
         }
-        println!("Count is {}", count);
-        println!("Err count is {}", err_count);
         Ok(())
     }
 }
