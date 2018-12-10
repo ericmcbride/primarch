@@ -52,15 +52,9 @@ impl LoadDriver for HttpOptions {
         while now.elapsed() <= Duration::new(self.duration, 0) {
             let execution_time = Instant::now();
             for i in 0..rps {
-                let tx = tx.clone();
-                let url = self.url.clone();
-                let headers = self.headers.clone();
-                let body = self.body.clone();
-                let client = client.clone();
-                let duration = self.duration.clone();
 
-                //  If requests and time elapsed is less then or equal to duration of test
-                if i == (rps - 1) && &now.elapsed().subsec_millis() <= &(duration as u32) {
+                // If iteration is equal to rps and hte elapsed time is less then or equal to 
+                if i == (rps - 1) && &now.elapsed().subsec_millis() <= &(self.duration as u32) {
                     let elapsed_time = Instant::now();
                     let sleep_time =
                         1000 as u32 - elapsed_time.duration_since(execution_time).subsec_millis();
@@ -68,6 +62,12 @@ impl LoadDriver for HttpOptions {
                     println!("Sleep time is {:?}", duration);
                     thread::sleep(duration);
                 }
+
+                let tx = tx.clone();
+                let url = self.url.clone();
+                let headers = self.headers.clone();
+                let body = self.body.clone();
+                let client = client.clone();
 
                 thread::spawn(move || tx.send(resp(client, url, headers, body)));
                 continue;
