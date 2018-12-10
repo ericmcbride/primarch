@@ -24,6 +24,7 @@ fn post_request(
     let resp = client.post(url).headers(headers).json(&body).send()?;
     Ok(resp)
 }
+
 fn get_request(client: Client, url: Url, headers: HeaderMap, _: String) -> Result<Response, Error> {
     let resp = client.get(url).headers(headers).send()?;
     Ok(resp)
@@ -45,24 +46,18 @@ impl LoadDriver for HttpOptions {
             _ => get_request, // defaults
         };
 
-        //#TODO Improve performance of this whole section and code quality and then odd the
-        //infinite version of it for long running processes
+        //#TODO Improve performance of this whole section and code quality and then add the
+        //infinite version of it for long running processes.  Maybe implement a limiter/token
+        //bucket to see if we can make the requests more spread out and less bursty
         println!("Processing requests...");
         let now = Instant::now();
-        while now.elapsed() <= Duration::new(self.duration, 0) {
+        let dur = Duration::new(self.duration, 0);
+        let mut count = 0;
+        let mut err_count = 0;
+
+        while now.elapsed() <= dur {
             let execution_time = Instant::now();
             for i in 0..rps {
-
-                // If iteration is equal to rps and hte elapsed time is less then or equal to 
-                if i == (rps - 1) && &now.elapsed().subsec_millis() <= &(self.duration as u32) {
-                    let elapsed_time = Instant::now();
-                    let sleep_time =
-                        1000 as u32 - elapsed_time.duration_since(execution_time).subsec_millis();
-                    let duration = Duration::from_millis(sleep_time as u64);
-                    println!("Sleep time is {:?}", duration);
-                    thread::sleep(duration);
-                }
-
                 let tx = tx.clone();
                 let url = self.url.clone();
                 let headers = self.headers.clone();
@@ -70,23 +65,27 @@ impl LoadDriver for HttpOptions {
                 let client = client.clone();
 
                 thread::spawn(move || tx.send(resp(client, url, headers, body)));
-                continue;
+
+                // If the requests are equal, and the time passed is less then a second we need to throttle
+                if i == (rps - 1) && now.elapsed() <= dur {
+                    let elapsed_time = Instant::now();
+                    let sleep_time =
+                        1000 as u32 - elapsed_time.duration_since(execution_time).subsec_millis();
+                    let sleep_ms = Duration::from_millis(sleep_time as u64);
+                    thread::sleep(sleep_ms);
+                }
             }
 
-            let mut count = 0;
-            let mut err_count = 0;
-
-            //#TODO: Figure out why reporting takes so long and sum up ALL instaed of in chunks
             for _ in 0..rps {
                 match rx.recv() {
                     Ok(_) => count += 1,
                     Err(_) => err_count += 1, // #TODO establish baselines for whats an error
                 }
             }
-
-            println!("Count is {}", count);
-            println!("Err count is {}", err_count);
         }
+
+        println!("success is {:?}", count);
+        println!("error count is {:?}", err_count);
         Ok(())
     }
 }
