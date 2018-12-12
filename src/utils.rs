@@ -38,6 +38,11 @@ fn parse_url(url: &str) -> Result<Url, UrlError> {
     }
 }
 
+fn get_check(url: Url) -> Result<(), Box<::std::error::Error>> {
+    reqwest::get(url)?;
+    Ok(())
+}
+
 // Create headers for the requests
 fn create_reqwest_headers(
     headers: &Vec<String>,
@@ -56,7 +61,8 @@ fn create_reqwest_headers(
 
 // Sets arguments for HTTP Client.
 pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error::Error>> {
-    let url = parse_url(args.value_of("URL").unwrap())?;
+    let mut url = parse_url(args.value_of("URL").unwrap())?;
+    let _ = get_check(url.clone())?;
     let rps = parse_u64(args.value_of("RPS").unwrap())?;
     let http_verb = args.value_of("HTTP_VERB").unwrap();
     let string_verb = http_verb.to_owned();

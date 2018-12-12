@@ -13,7 +13,7 @@ fn main() {
     match run() {
         Ok(_) => println!("Report coming soon...."),
         Err(e) => {
-            panic!("Error {}", e); // #TODO better error handling here
+            println!("Error {}", e); // #TODO better error handling here
         }
     }
 }
@@ -31,7 +31,7 @@ fn run() -> Result<(), Box<::std::error::Error>> {
         (@arg BODY: -b --body +takes_value "Request body file")
         (@arg DURATION: -d --duration +takes_value "Duration of Test in seconds (0 is forever)")
         (@arg HEADER: ... --header +takes_value "Request Headers (multiple can be set")
-    ).get_matches();
+    ).get_matches_safe()?;
 
     let options = utils::set_args(&args)?;
 
