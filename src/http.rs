@@ -77,7 +77,8 @@ impl LoadDriver for HttpOptions {
             }
 
             for _ in 0..rps {
-                match rx.recv() {
+                let resp = rx.recv()?;
+                match resp {
                     Ok(_) => count += 1,
                     Err(_) => err_count += 1, // #TODO establish baselines for whats an error
                 }

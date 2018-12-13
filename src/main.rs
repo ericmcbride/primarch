@@ -13,7 +13,7 @@ fn main() {
     match run() {
         Ok(_) => println!("Report coming soon...."),
         Err(e) => {
-            panic!("Error {}", e); // #TODO better error handling here
+            eprintln!("Error {}", e); // #TODO better error handling here
         }
     }
 }
