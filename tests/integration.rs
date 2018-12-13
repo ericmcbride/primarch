@@ -15,7 +15,6 @@ For more information try --help
 static WITHOUT_URL_ARGS_OUTPUT: &'static str =
     "error: The following required arguments were not provided:
     --url <URL>
-
 ";
 
 static WITHOUT_RPS_ARGS_OUTPUT: &'static str =
@@ -28,9 +27,14 @@ static WITHOUT_VERB_ARGS_OUTPUT: &'static str =
     --http_verb <HTTP_VERB>
 ";
 
+static INVALID_URL_OUTPUT: &'static str =
+    "Error http://foo/: an error occurred trying to connect: failed to lookup address information: nodename nor servname provided, or not known
+";
+
 #[cfg(test)]
 mod integration {
     use Command;
+    use INVALID_URL_OUTPUT;
     use WITHOUT_ARGS_OUTPUT;
     use WITHOUT_RPS_ARGS_OUTPUT;
     use WITHOUT_URL_ARGS_OUTPUT;
@@ -73,6 +77,17 @@ mod integration {
             .output()
             .expect("failed to execute process");
         assert!(String::from_utf8_lossy(&output.stderr).contains(WITHOUT_VERB_ARGS_OUTPUT));
+    }
+
+    #[test]
+    fn calling_primarch_with_invalid_url() {
+        let output = Command::new("./target/debug/primarch")
+            .args(&["--url", "foo"])
+            .args(&["--requests_per_second", "5"])
+            .args(&["--http_verb", "POST"])
+            .output()
+            .unwrap();
+        assert_eq!(String::from_utf8_lossy(&output.stderr), INVALID_URL_OUTPUT);
     }
 
 }

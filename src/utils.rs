@@ -61,7 +61,7 @@ fn create_reqwest_headers(
 
 // Sets arguments for HTTP Client.
 pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error::Error>> {
-    let mut url = parse_url(args.value_of("URL").unwrap())?;
+    let url = parse_url(args.value_of("URL").unwrap())?;
     let _ = get_check(url.clone())?;
     let rps = parse_u64(args.value_of("RPS").unwrap())?;
     let http_verb = args.value_of("HTTP_VERB").unwrap();
