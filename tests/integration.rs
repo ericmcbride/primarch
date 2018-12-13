@@ -28,8 +28,7 @@ static WITHOUT_VERB_ARGS_OUTPUT: &'static str =
 ";
 
 static INVALID_URL_OUTPUT: &'static str =
-    "Error http://foo/: an error occurred trying to connect: failed to lookup address information: nodename nor servname provided, or not known
-";
+    "an error occurred trying to connect: failed to lookup address information";
 
 #[cfg(test)]
 mod integration {
@@ -87,7 +86,7 @@ mod integration {
             .args(&["--http_verb", "POST"])
             .output()
             .unwrap();
-        assert_eq!(String::from_utf8_lossy(&output.stderr), INVALID_URL_OUTPUT);
+        assert!(String::from_utf8_lossy(&output.stderr).contains(INVALID_URL_OUTPUT));
     }
 
 }
