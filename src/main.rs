@@ -6,8 +6,9 @@ extern crate reqwest;
 
 mod http;
 mod utils;
-use http::LoadDriver;
+mod args;
 
+use http::LoadDriver;
 // Main function that runs the run function.  The run function will return a result or error
 fn main() {
     match run() {
@@ -21,7 +22,7 @@ fn main() {
 // Run function that will collect the arguments, and will validate the url, and then either kick
 // off a load test, or return an error to the main function
 fn run() -> Result<(), Box<::std::error::Error>> {
-    let args = clap_app!(primarch =>
+    let matches = clap_app!(primarch =>
         (version: "1.0")
         (author: "Eric McBride <ericmcbridedeveloper@gmail.com>")
         (about: "Load Driver written in Rust")
@@ -33,11 +34,11 @@ fn run() -> Result<(), Box<::std::error::Error>> {
         (@arg HEADER: ... --header +takes_value "Request Headers (multiple can be set")
     ).get_matches();
 
-    let options = utils::set_args(&args)?;
+    let options = args::args::set_args(&matches)?;
 
     match options.url.scheme() {
         "http" | "https" => options.load_driver(),
-        _ => utils::generate_err(format!(
+        _ => utils::utils::generate_err(format!(
             "Unsupported HTTP Protocol {:?}",
             options.url.scheme()
         )),
