@@ -3,7 +3,9 @@ pub mod args {
     use http;
 
     // Sets arguments for HTTP Client.
-    pub fn set_args(args: &ArgMatches) -> Result<http::HttpOptions, Box<::std::error::Error>> {
+    pub fn set_args(
+        args: &ArgMatches,
+    ) -> Result<http::http::HttpOptions, Box<::std::error::Error>> {
         let url = arg_helpers::parse_url(args.value_of("URL").unwrap())?;
         let _ = arg_helpers::get_check(url.clone())?;
         let rps = arg_helpers::parse_u64(args.value_of("RPS").unwrap())?;
@@ -33,7 +35,7 @@ pub mod args {
             reqwest::header::HeaderMap::new()
         };
 
-        Ok(http::HttpOptions {
+        Ok(http::http::HttpOptions {
             url: url,
             rps: rps,
             http_verb: string_verb,
@@ -47,7 +49,7 @@ pub mod args {
         use reqwest::{Url, UrlError};
         use std::fs::File;
         use std::io::Read;
-        
+
         // Convert rps from string to u64. Return result enum
         pub(in args) fn parse_u64(value: &str) -> Result<u64, Box<::std::error::Error>> {
             let val: u64 = value.parse()?;
@@ -66,7 +68,7 @@ pub mod args {
             reqwest::get(url)?;
             Ok(())
         }
-        
+
         // check url for scheme and such
         pub(in args) fn parse_url(url: &str) -> Result<Url, UrlError> {
             match Url::parse(url) {
@@ -87,8 +89,10 @@ pub mod args {
 
             for head in headers {
                 let mut split_vect: Vec<&str> = head.split(":").collect();
-                let header_name = reqwest::header::HeaderName::from_bytes(split_vect[0].as_bytes())?;
-                let header_value = reqwest::header::HeaderValue::from_bytes(split_vect[1].as_bytes())?;
+                let header_name =
+                    reqwest::header::HeaderName::from_bytes(split_vect[0].as_bytes())?;
+                let header_value =
+                    reqwest::header::HeaderValue::from_bytes(split_vect[1].as_bytes())?;
 
                 new_headers.insert(header_name, header_value);
             }

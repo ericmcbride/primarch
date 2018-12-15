@@ -4,11 +4,13 @@ extern crate clap;
 extern crate indicatif;
 extern crate reqwest;
 
-mod http;
-mod utils;
 mod args;
+mod http;
+mod load;
+mod utils;
 
-use http::LoadDriver;
+use load::load::LoadDriver;
+
 // Main function that runs the run function.  The run function will return a result or error
 fn main() {
     match run() {
