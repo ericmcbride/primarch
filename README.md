@@ -1,18 +1,27 @@
 # Primarch
+[![CircleCI](https://circleci.com/gh/ericmcbride/primarch/tree/master.svg?style=svg)](https://circleci.com/gh/ericmcbride/primarch/tree/master)
 
 Primarch is a load drive tool written in Rust.
 
 
 ## Current Usage
 ``` bash
-cargo run <url> <rps>
+cargo run -- --url google.com --requests_per_second 5 --http_verb GET --header Foo:bar --duration=10
 ```
-in parent dir
 
-## TODO v1 
-1.) Add Arg How Many requests per second 
-2.) Add long poller for keeping the load going
-3.) Add Arg for length of load tests
+
+## Arguments
+
+REQUIRED:
+- URL --url: URL of site to be load tested (single value)
+- RPS, --requests_per_second: How many requests per second (single value)
+- HTTP_VERB, --http_verb: GET or POST supported right now (single value)
+
+OPTIONAL:
+- BODY, --body: JSON file to open for payload body (FORM suport coming soon) (single value)
+- DURATION, --duration: Length of load test (infinite support coming soon) (single value)
+- HEADER, --header: Key Value seperated by a Colon (:).  Example: Auth:1234 (multiple value) 
+
 
 ## The Future
 1.) Make a lib to be used
