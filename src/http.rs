@@ -3,6 +3,7 @@ use reqwest::{Client, Error, Response, Url};
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
+use indicatif::ProgressBar;
 
 pub struct HttpOptions {
     pub url: reqwest::Url,
@@ -54,10 +55,12 @@ impl LoadDriver for HttpOptions {
         let dur = Duration::new(self.duration, 0);
         let mut count = 0;
         let mut err_count = 0;
+        let pb = ProgressBar::new(self.duration * self.rps);
 
         while now.elapsed() <= dur {
             let execution_time = Instant::now();
             for i in 0..rps {
+                pb.inc(1);
                 let tx = tx.clone();
                 let url = self.url.clone();
                 let headers = self.headers.clone();
@@ -84,7 +87,6 @@ impl LoadDriver for HttpOptions {
                 }
             }
         }
-
         println!("success is {:?}", count);
         println!("error count is {:?}", err_count);
         Ok(())
