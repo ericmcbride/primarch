@@ -2,6 +2,7 @@
 extern crate clap;
 extern crate indicatif;
 extern crate reqwest;
+extern crate time;
 
 mod http;
 mod utils;
@@ -30,7 +31,8 @@ fn run() -> Result<(), Box<::std::error::Error>> {
         (@arg BODY: -b --body +takes_value "Request body file")
         (@arg DURATION: -d --duration +takes_value "Duration of Test in seconds (0 is forever)")
         (@arg HEADER: ... --header +takes_value "Request Headers (multiple can be set")
-    ).get_matches();
+    )
+    .get_matches();
 
     let options = utils::set_args(&args)?;
 

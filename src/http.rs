@@ -1,9 +1,11 @@
+use time::PreciseTime;
+
+use indicatif::ProgressBar;
 use reqwest::header::HeaderMap;
 use reqwest::{Client, Error, Response, Url};
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
-use indicatif::ProgressBar;
 
 pub struct HttpOptions {
     pub url: reqwest::Url,
@@ -67,7 +69,7 @@ impl LoadDriver for HttpOptions {
                 let body = self.body.clone();
                 let client = client.clone();
 
-                thread::spawn(move || tx.send(resp(client, url, headers, body)));
+                thread::spawn(move || tx.send(time_request(resp, client, url, headers, body)));
 
                 // If the requests are equal, and the time passed is less then a second we need to throttle
                 if i == (rps - 1) && now.elapsed() <= dur {
@@ -81,16 +83,27 @@ impl LoadDriver for HttpOptions {
 
             for _ in 0..rps {
                 let resp = rx.recv()?;
-                match resp {
-                    Ok(_) => count += 1,
-                    Err(_) => err_count += 1, // #TODO establish baselines for whats an error
-                }
+                println!("Resp time is: {:?}ms", resp.num_milliseconds());
             }
         }
-        println!("success is {:?}", count);
-        println!("error count is {:?}", err_count);
         Ok(())
     }
+}
+
+pub fn time_request<F>(
+    f: F,
+    client: Client,
+    url: Url,
+    header_map: HeaderMap,
+    body: String,
+) -> time::Duration
+where
+    F: Fn(Client, Url, HeaderMap, String) -> Result<Response, Error>,
+{
+    let start = PreciseTime::now();
+    let resp = f(client, url, header_map, body);
+    let end = PreciseTime::now();
+    start.to(end)
 }
 
 pub struct LoadReport {
